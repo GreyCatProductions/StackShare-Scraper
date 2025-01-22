@@ -1,27 +1,36 @@
 import os
 from datetime import datetime
-import url_scraper
-from website_downloader import download_page
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.common.by import By
 
+import StackShareLogin
+from driverFactory import createDriver
 
 def main():
-    print("Starting to scrape all urls")
-    scraped_urls = url_scraper.get_all_urls(site_map_urls)
-    print(len(scraped_urls), "urls scraped")
+    print("Trying to create driver")
+    driver = None
+    try:
+        driver = createDriver()
+        print("Driver created")
+    except Exception as e:
+        print("Failed to create driver " + str(e))
 
-    print("Starting to download all websites")
-    failures = 0
-    successes = 0
-    for i, url in enumerate(scraped_urls):
-        if i % 100 == 0:
-            print(f"{i} / {len(scraped_urls)} websites downloaded")
+    print("Trying to login")
+    try:
+        StackShareLogin.login(driver)
+        print("Login successful")
+    except Exception as e:
+        print("Login failed " + str(e))
 
-        if download_page(url, save_location):
-            successes += 1
-        else:
-            failures += 1
+    try:
+        button = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, "//button[text()='Ok, got it']")))
+        button.click()
+    except:
+        pass
 
-    print(f"successes: {successes}, failures: {failures}, total: {len(scraped_urls)}")
+
 
 if __name__ == '__main__':
     save_location = os.path.join(os.getcwd(), 'data', datetime.today().strftime('%d-%m-%Y'))
