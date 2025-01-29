@@ -2,7 +2,7 @@ import os
 import random
 import time
 from datetime import datetime
-
+from selenium.common import TimeoutException
 from driver_factory import createDriver
 from sitemap_extractor import load_sitemap_url_and_get_all_extracted_urls
 from site_data_extractor import process_website
@@ -21,18 +21,21 @@ def main():
         urls = get_urls_safely(site_map_url)
         dir_path = os.path.join(save_location, get_last_part_of_url(site_map_url))
 
-        for url in tqdm(urls[:5]):
+        for url in tqdm(urls):
             retries = 5
             while retries > 0:
-                driver.get(url)
-                time.sleep(random.uniform(0.2, 1.2))
-                success = process_website(driver, dir_path)
-
-                if success:
-                    break
-                else:
-                    print(f"Failed to extract data from {url}")
-                    retries -= 1
+                try:
+                    driver.get(url)
+                    time.sleep(random.uniform(0.75, 2))
+                    success = process_website(driver, dir_path)
+                    if success:
+                        break
+                    else:
+                        print(f"Failed to extract data from {url}")
+                        retries -= 1
+                except TimeoutException:
+                    print("timed out!")
+                    time.sleep(300)
 
             if retries > 0:
                 successes += 1
